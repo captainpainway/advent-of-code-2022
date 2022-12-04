@@ -73,11 +73,9 @@ fn sum_priorities(dupes: Vec<char>) -> usize {
 Partition the list into groups of three.
  */
 fn groups(sacks: Vec<&str>) -> Vec<Vec<&str>> {
-    let mut groups: Vec<Vec<&str>> = Vec::new();
-    for chunk in sacks.chunks(3) {
-        groups.push(chunk.to_vec());
-    }
-    groups
+    sacks.chunks(3).map(|chunk| {
+        return chunk.to_vec();
+    }).collect::<Vec<Vec<&str>>>()
 }
 
 /*
@@ -86,8 +84,7 @@ Creates a hashmap, removes duplicates,
 and checks for the only character that appears thrice.
  */
 fn find_badge(groups: Vec<Vec<&str>>) -> Vec<char> {
-    let mut badges: Vec<char> = Vec::new();
-    for group in groups {
+    groups.iter().map(|group| {
         let mut badge_map: HashMap<char, i32> = HashMap::new();
         for items in group {
             let mut dedup = items.chars().collect::<Vec<char>>();
@@ -97,14 +94,13 @@ fn find_badge(groups: Vec<Vec<&str>>) -> Vec<char> {
                 *badge_map.entry(item).or_insert(0) += 1;
             }
         }
-        let common = badge_map.iter().find_map(|(key, &val)| {
+        let common_char = badge_map.iter().find_map(|(key, &val)| {
             if val == 3 {
                 Some(key)
             } else {
                 None
             }
         });
-        badges.push(*common.unwrap());
-    }
-    badges
+        return *common_char.unwrap();
+    }).collect::<Vec<char>>()
 }
