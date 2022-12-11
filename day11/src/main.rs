@@ -14,30 +14,27 @@ struct Monkey {
 impl Monkey {
     fn new(instructions: &str) -> Monkey {
         let ins: Vec<&str> = instructions.split("\n").collect();
-        let items = ins[1]
-            .trim()
-            .split(": ")
-            .nth(1)
-            .unwrap()
-            .split(", ")
-            .map(|x| x.parse::<i64>().unwrap())
-            .collect::<VecDeque<i64>>();
-        let operation = ins[2]
-            .split(" = ")
-            .nth(1)
-            .unwrap()
-            .to_string();
-        let test: i64 = ins[3]
-            .trim()
-            .split(" ")
-            .nth(3)
-            .unwrap()
-            .parse()
-            .unwrap();
         Monkey {
-            items,
-            operation,
-            test,
+            items: ins[1]
+                .trim()
+                .split(": ")
+                .nth(1)
+                .unwrap()
+                .split(", ")
+                .map(|x| x.parse::<i64>().unwrap())
+                .collect::<VecDeque<i64>>(),
+            operation: ins[2]
+                .split(" = ")
+                .nth(1)
+                .unwrap()
+                .to_string(),
+            test: ins[3]
+                .trim()
+                .split(" ")
+                .nth(3)
+                .unwrap()
+                .parse()
+                .unwrap(),
             yes: ins[4]
                 .chars()
                 .collect::<Vec<char>>()
@@ -58,7 +55,7 @@ impl Monkey {
         }
     }
 
-    fn inspect_items(&mut self) {
+    fn inspect_items(&mut self) -> &mut Self {
         self.items = self.items.iter().map(|item| {
             self.inspected += 1;
             let ops: Vec<&str> = self.operation.split(" ").collect();
@@ -78,19 +75,34 @@ impl Monkey {
                 _ => 0
             }
         }).collect::<VecDeque<i64>>();
+        self
     }
 
-    fn lose_interest(&mut self, interest: i64) {
+    fn lose_interest(&mut self, interest: i64) -> &mut Self {
         self.items = self.items.iter()
             .map(|item| item / interest)
             .collect::<VecDeque<i64>>();
+        self
     }
 
-    fn manage_stress(&mut self, stress_relief: i64) {
+    fn manage_stress(&mut self, stress_relief: i64) -> &mut Self {
         self.items = self.items.iter()
             .map(|item| item % stress_relief)
             .collect::<VecDeque<i64>>();
+        self
     }
+}
+
+fn throw(mut monkeys: Vec<Monkey>, i: usize) -> Vec<Monkey> {
+    while monkeys[i].items.len() > 0 {
+        let item = monkeys[i].items.pop_front().unwrap();
+        let target = match item % monkeys[i].test == 0 {
+            true => monkeys[i].yes,
+            _ => monkeys[i].no
+        };
+        monkeys[target].items.push_back(item);
+    }
+    monkeys
 }
 
 fn main() {
@@ -103,17 +115,17 @@ fn main() {
 }
 
 fn monkey_business(monkeys: Vec<&str>, rounds: i64, interest_lost: i64) -> i64 {
-    let mut all_monkeys: Vec<Monkey> = Vec::new();
-    for monkey in monkeys {
-        let m = Monkey::new(monkey);
-        all_monkeys.push(m);
-    }
+    let mut all_monkeys: Vec<Monkey> = monkeys
+        .iter()
+        .map(|m| Monkey::new(m))
+        .collect();
     let stress_relief: i64 = all_monkeys.iter().map(|m| m.test).product();
     for _ in 0..rounds {
         for i in 0..all_monkeys.len() {
-            all_monkeys[i].inspect_items();
-            all_monkeys[i].lose_interest(interest_lost);
-            all_monkeys[i].manage_stress(stress_relief);
+            all_monkeys[i]
+                .inspect_items()
+                .lose_interest(interest_lost)
+                .manage_stress(stress_relief);
             all_monkeys = throw(all_monkeys.clone(), i);
         }
     }
@@ -122,21 +134,5 @@ fn monkey_business(monkeys: Vec<&str>, rounds: i64, interest_lost: i64) -> i64 {
         .map(|x| x.inspected)
         .collect::<Vec<i64>>();
     inspected.sort();
-    inspected
-        .iter()
-        .rev()
-        .take(2)
-        .product::<i64>()
-}
-
-fn throw(mut monkeys: Vec<Monkey>, curr: usize) -> Vec<Monkey> {
-    while monkeys[curr].items.len() > 0 {
-        let item = monkeys[curr].items.pop_front().unwrap();
-        let target = match item % monkeys[curr].test == 0 {
-            true => monkeys[curr].yes,
-            _ => monkeys[curr].no
-        };
-        monkeys[target].items.push_back(item);
-    }
-    monkeys
+    inspected.iter().rev().take(2).product::<i64>()
 }
