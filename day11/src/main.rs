@@ -1,5 +1,5 @@
 use std::fs;
-use std::collections::{VecDeque, HashMap};
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
 struct Monkey {
@@ -91,19 +91,6 @@ impl Monkey {
             .map(|item| item % stress_relief)
             .collect::<VecDeque<i64>>();
     }
-
-    fn throw(&mut self) -> HashMap<usize, Vec<i64>> {
-        let mut throws: HashMap<usize, Vec<i64>> = HashMap::new();
-        while self.items.len() > 0 {
-            let item = self.items.pop_front().unwrap();
-            let target = match item % self.test == 0 {
-                true => self.yes,
-                _ => self.no
-            };
-            throws.entry(target).or_insert_with(Vec::new).push(item);
-        }
-        throws
-    }
 }
 
 fn main() {
@@ -127,13 +114,7 @@ fn monkey_business(monkeys: Vec<&str>, rounds: i64, interest_lost: i64) -> i64 {
             all_monkeys[i].inspect_items();
             all_monkeys[i].lose_interest(interest_lost);
             all_monkeys[i].manage_stress(stress_relief);
-            let throws = all_monkeys[i].throw();
-            for key in throws.keys() {
-                let recipient = &mut all_monkeys[*key];
-                for item in &throws[key] {
-                    recipient.items.push_back(*item);
-                }
-            }
+            all_monkeys = throw(all_monkeys.clone(), i);
         }
     }
     let mut inspected = all_monkeys
@@ -146,4 +127,16 @@ fn monkey_business(monkeys: Vec<&str>, rounds: i64, interest_lost: i64) -> i64 {
         .rev()
         .take(2)
         .product::<i64>()
+}
+
+fn throw(mut monkeys: Vec<Monkey>, curr: usize) -> Vec<Monkey> {
+    while monkeys[curr].items.len() > 0 {
+        let item = monkeys[curr].items.pop_front().unwrap();
+        let target = match item % monkeys[curr].test == 0 {
+            true => monkeys[curr].yes,
+            _ => monkeys[curr].no
+        };
+        monkeys[target].items.push_back(item);
+    }
+    monkeys
 }
